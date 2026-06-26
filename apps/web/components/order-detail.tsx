@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate, isOrderExpired } from "@/lib/utils";
 import { toast } from "sonner";
-import { ExternalLink, Copy } from "lucide-react";
+import { ExternalLink, Copy, Pencil } from "lucide-react";
 
 type Order = {
   id: string; publicId: string; restaurant: string; payerName: string;
@@ -23,6 +26,34 @@ type Order = {
 export function OrderDetail({ order, userId: _userId }: { order: Order; userId: string }) {
   const router = useRouter();
   const [updating, setUpdating] = useState(false);
+  const [editingDetails, setEditingDetails] = useState(false);
+  const [details, setDetails] = useState({
+    currency: order.currency,
+    deliveryFee: Number(order.deliveryFee),
+    tip: Number(order.tip),
+    comments: order.comments ?? "",
+  });
+
+  async function saveDetails() {
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currency: details.currency,
+          deliveryFee: details.deliveryFee,
+          tip: details.tip,
+          comments: details.comments || null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Guardado");
+      setEditingDetails(false);
+      router.refresh();
+    } catch { toast.error("Error al guardar"); }
+    finally { setUpdating(false); }
+  }
   const expired = isOrderExpired(order.expiresAt);
   const publicUrl = typeof window !== "undefined"
     ? `${window.location.origin}/o/${order.publicId}`
@@ -103,17 +134,55 @@ export function OrderDetail({ order, userId: _userId }: { order: Order; userId: 
         <Card>
           <CardContent className="py-3 space-y-1 text-sm">
             {order.deadlineAt && <p><span className="text-muted-foreground">Deadline:</span> {formatDate(order.deadlineAt)}</p>}
-            <p><span className="text-muted-foreground">Expires:</span> {formatDate(order.expiresAt)}</p>
-            {order.comments && <p><span className="text-muted-foreground">Notes:</span> {order.comments}</p>}
+            <p><span className="text-muted-foreground">Vence:</span> {formatDate(order.expiresAt)}</p>
+            {order.comments && <p><span className="text-muted-foreground">Notas:</span> {order.comments}</p>}
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="py-3 space-y-1 text-sm">
-            <p><span className="text-muted-foreground">Subtotal:</span> {formatCurrency(subtotal, order.currency)}</p>
-            <p><span className="text-muted-foreground">Delivery:</span> {formatCurrency(Number(order.deliveryFee), order.currency)}</p>
-            <p><span className="text-muted-foreground">Tip:</span> {formatCurrency(Number(order.tip), order.currency)}</p>
-            <Separator />
-            <p className="font-semibold"><span className="text-muted-foreground">Total:</span> {formatCurrency(total, order.currency)}</p>
+          <CardHeader className="pb-2 flex-row items-center justify-between">
+            <CardTitle className="text-sm">Totales</CardTitle>
+            {!editingDetails && (
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingDetails(true)}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            {editingDetails ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Moneda</Label>
+                    <Input className="h-7 text-xs" value={details.currency} onChange={(e) => setDetails((d) => ({ ...d, currency: e.target.value }))} placeholder="MXN" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Envío</Label>
+                    <Input className="h-7 text-xs" type="number" step="0.01" min={0} value={details.deliveryFee} onChange={(e) => setDetails((d) => ({ ...d, deliveryFee: parseFloat(e.target.value) || 0 }))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Propina</Label>
+                    <Input className="h-7 text-xs" type="number" step="0.01" min={0} value={details.tip} onChange={(e) => setDetails((d) => ({ ...d, tip: parseFloat(e.target.value) || 0 }))} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Notas</Label>
+                  <Textarea className="text-xs min-h-0" rows={2} value={details.comments} onChange={(e) => setDetails((d) => ({ ...d, comments: e.target.value }))} placeholder="Instrucciones generales..." />
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" className="flex-1 h-7 text-xs" onClick={saveDetails} disabled={updating}>Guardar</Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setEditingDetails(false); setDetails({ currency: order.currency, deliveryFee: Number(order.deliveryFee), tip: Number(order.tip), comments: order.comments ?? "" }); }}>Cancelar</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1 text-sm">
+                <p><span className="text-muted-foreground">Subtotal:</span> {formatCurrency(subtotal, order.currency)}</p>
+                <p><span className="text-muted-foreground">Envío:</span> {formatCurrency(Number(order.deliveryFee), order.currency)}</p>
+                <p><span className="text-muted-foreground">Propina:</span> {formatCurrency(Number(order.tip), order.currency)}</p>
+                <Separator />
+                <p className="font-semibold"><span className="text-muted-foreground">Total:</span> {formatCurrency(total, order.currency)}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

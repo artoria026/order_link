@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addParticipantSchema, type AddParticipantInput } from "@/lib/validations";
@@ -26,6 +26,11 @@ export function AddParticipantDialog({ token, currency, menuItems, onClose, onSu
     },
   });
 
+  useEffect(() => {
+    const saved = localStorage.getItem("ol_participant_name");
+    if (saved) setValue("displayName", saved);
+  }, [setValue]);
+
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
   async function onSubmit(data: AddParticipantInput) {
@@ -40,6 +45,7 @@ export function AddParticipantDialog({ token, currency, menuItems, onClose, onSu
         const err = await res.json();
         throw new Error(err.error || "Failed");
       }
+      localStorage.setItem("ol_participant_name", data.displayName);
       toast.success("Order added!");
       onSuccess();
     } catch (e: unknown) {

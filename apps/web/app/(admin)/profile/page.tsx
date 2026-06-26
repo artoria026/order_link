@@ -26,7 +26,9 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    fetch("/api/profile").then((r) => r.json()).then((data) => reset(data));
+    fetch("/api/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) reset(data); });
   }, [reset]);
 
   async function onSubmit(data: ProfileForm) {

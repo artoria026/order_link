@@ -10,7 +10,7 @@ export default async function RestaurantsPage() {
   const session = await auth();
   const restaurants = await db.restaurant.findMany({
     where: { createdBy: session!.user!.id! },
-    include: { _count: { select: { menuItems: { where: { isActive: true } } } } },
+    include: { menuItems: { where: { isActive: true }, select: { id: true } } },
     orderBy: { lastUsed: "desc" },
   });
 
@@ -32,7 +32,7 @@ export default async function RestaurantsPage() {
                   <div>
                     <p className="font-medium">{r.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {r._count.menuItems} menu items · Last used {formatDate(r.lastUsed)}
+                      {r.menuItems.length} menu items · Last used {formatDate(r.lastUsed)}
                     </p>
                   </div>
                 </div>

@@ -7,9 +7,7 @@ import { createOrderSchema, type CreateOrderInput } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 export default function NewOrderPage() {
@@ -18,7 +16,7 @@ export default function NewOrderPage() {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateOrderInput>({
     resolver: zodResolver(createOrderSchema),
-    defaultValues: { currency: "MXN", deliveryFee: 0, tip: 0 },
+    defaultValues: {},
   });
 
   useEffect(() => {
@@ -64,7 +62,7 @@ export default function NewOrderPage() {
           <CardHeader><CardTitle>Order Details</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="restaurant">Restaurant *</Label>
+              <Label htmlFor="restaurant">Restaurante *</Label>
               <Input id="restaurant" {...register("restaurant")} placeholder="Snack House" />
               {errors.restaurant && <p className="text-xs text-destructive">{errors.restaurant.message}</p>}
             </div>
@@ -73,29 +71,9 @@ export default function NewOrderPage() {
               <Input id="payerName" {...register("payerName")} placeholder="Arturo" />
               {errors.payerName && <p className="text-xs text-destructive">{errors.payerName.message}</p>}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Moneda</Label>
-                <Input id="currency" {...register("currency")} placeholder="MXN" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="deadlineAt">Límite de pedido</Label>
-                <Input id="deadlineAt" type="datetime-local" {...register("deadlineAt")} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="deliveryFee">Envío</Label>
-                <Input id="deliveryFee" type="number" step="0.01" {...register("deliveryFee", { valueAsNumber: true })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tip">Propina</Label>
-                <Input id="tip" type="number" step="0.01" {...register("tip", { valueAsNumber: true })} />
-              </div>
-            </div>
             <div className="space-y-2">
-              <Label htmlFor="comments">Notas</Label>
-              <Textarea id="comments" {...register("comments")} rows={2} placeholder="Instrucciones generales..." />
+              <Label htmlFor="deadlineAt">Límite de pedido</Label>
+              <Input id="deadlineAt" type="datetime-local" {...register("deadlineAt")} />
             </div>
           </CardContent>
         </Card>

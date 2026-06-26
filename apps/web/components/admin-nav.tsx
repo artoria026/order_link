@@ -12,8 +12,9 @@ export function AdminNav({ user }: { user: User }) {
 
   const links = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/orders", label: "Orders" },
-    { href: "/restaurants", label: "Restaurants" },
+    { href: "/orders", label: "Órdenes" },
+    { href: "/restaurants", label: "Restaurantes" },
+    { href: "/users", label: "Usuarios" },
   ];
 
   return (

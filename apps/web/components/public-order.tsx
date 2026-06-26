@@ -37,14 +37,8 @@ export function PublicOrderPage({ token }: { token: string }) {
   });
 
   const { data: menuItems = [] } = useQuery<MenuItem[]>({
-    queryKey: ["menu", order?.restaurant],
-    queryFn: async () => {
-      if (!order?.restaurant) return [];
-      const restaurants = await fetch(`/api/restaurants`).then(r => r.json());
-      const found = restaurants.find((r: {name: string; id: string}) => r.name === order.restaurant);
-      if (!found) return [];
-      return fetch(`/api/restaurants/${found.id}/menu`).then(r => r.json());
-    },
+    queryKey: ["public-menu", token],
+    queryFn: () => fetch(`/api/public/${token}/menu`).then((r) => r.ok ? r.json() : []),
     enabled: !!order,
   });
 

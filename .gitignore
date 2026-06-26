@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+
+# Build
+build/
+dist/
+
+# Env files — usa .env.example como plantilla
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Prisma generated client
+apps/web/node_modules/.prisma/
+
+# Misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+.pnpm-debug.log*

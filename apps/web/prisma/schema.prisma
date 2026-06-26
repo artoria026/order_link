@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  name         String
+  passwordHash String     @map("password_hash")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  orders       Order[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model Order {
+  id           String        @id @default(uuid())
+  publicId     String        @unique @map("public_id")
+  restaurant   String
+  payerName    String        @map("payer_name")
+  currency     String        @default("MXN")
+  comments     String?
+  deadlineAt   DateTime?     @map("deadline_at")
+  expiresAt    DateTime      @map("expires_at")
+  status       OrderStatus   @default(DRAFT)
+  deliveryFee  Decimal       @default(0) @map("delivery_fee") @db.Decimal(10, 2)
+  tip          Decimal       @default(0) @db.Decimal(10, 2)
+  deletedAt    DateTime?     @map("deleted_at")
+  createdBy    String        @map("created_by")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  creator      User          @relation(fields: [createdBy], references: [id])
+  participants Participant[]
+  auditLogs    AuditLog[]
+
+  @@map("orders")
+}
+
+model Participant {
+  id            String            @id @default(uuid())
+  orderId       String            @map("order_id")
+  displayName   String            @map("display_name")
+  paymentStatus PaymentStatus     @default(PENDING) @map("payment_status")
+  joinedAt      DateTime          @default(now()) @map("joined_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  order         Order             @relation(fields: [orderId], references: [id])
+  items         ParticipantItem[]
+
+  @@map("participants")
+}
+
+model ParticipantItem {
+  id            String      @id @default(uuid())
+  participantId String      @map("participant_id")
+  product       String
+  quantity      Int         @default(1)
+  unitPrice     Decimal     @map("unit_price") @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@map("participant_items")
+}
+
+model Restaurant {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdBy String   @map("created_by")
+  lastUsed  DateTime @default(now()) @map("last_used")
+
+  @@map("restaurants")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  orderId   String?  @map("order_id")
+  userId    String?  @map("user_id")
+  action    String
+  payload   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Order?   @relation(fields: [orderId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+enum OrderStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}

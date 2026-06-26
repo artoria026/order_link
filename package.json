@@ -1,0 +1,19 @@
+{
+  "name": "orderlink-monorepo",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "start": "pnpm --filter web start"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "unrs-resolver",
+      "prisma",
+      "@prisma/engines",
+      "esbuild"
+    ]
+  }
+}

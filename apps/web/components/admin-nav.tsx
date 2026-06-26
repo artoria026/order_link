@@ -13,6 +13,7 @@ export function AdminNav({ user }: { user: User }) {
   const links = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/orders", label: "Orders" },
+    { href: "/restaurants", label: "Restaurants" },
   ];
 
   return (
@@ -38,7 +39,15 @@ export function AdminNav({ user }: { user: User }) {
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground hidden sm:block">{user.name}</span>
+          <Link
+            href="/profile"
+            className={cn(
+              "text-sm transition-colors hover:text-foreground hidden sm:block",
+              pathname === "/profile" ? "text-foreground font-medium" : "text-muted-foreground"
+            )}
+          >
+            {user.name}
+          </Link>
           <Button variant="outline" size="sm" onClick={() => signOut({ callbackUrl: "/login" })}>
             Sign out
           </Button>

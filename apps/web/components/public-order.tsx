@@ -8,13 +8,18 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { AddParticipantDialog } from "@/components/add-participant-dialog";
+import { PaymentInfoCard } from "@/components/payment-info-card";
 import { Plus, Clock } from "lucide-react";
+
+interface MenuItem { id: string; name: string; description: string | null; price: number | null; category: string | null; }
 
 interface Order {
   id: string; publicId: string; restaurant: string; payerName: string;
   currency: string; comments: string | null; deadlineAt: string | null;
   expiresAt: string; status: string; deliveryFee: number; tip: number;
   expired: boolean; subtotal: number; total: number;
+  paymentBank?: string | null; paymentHolder?: string | null;
+  paymentClabe?: string | null; paymentCard?: string | null;
   participants: Array<{
     id: string; displayName: string; paymentStatus: string; joinedAt: string;
     items: Array<{ id: string; product: string; quantity: number; unitPrice: number; notes: string | null }>;
@@ -29,6 +34,18 @@ export function PublicOrderPage({ token }: { token: string }) {
     queryKey: ["public-order", token],
     queryFn: () => fetch(`/api/public/${token}`).then((r) => r.ok ? r.json() : Promise.reject()),
     refetchInterval: 5000,
+  });
+
+  const { data: menuItems = [] } = useQuery<MenuItem[]>({
+    queryKey: ["menu", order?.restaurant],
+    queryFn: async () => {
+      if (!order?.restaurant) return [];
+      const restaurants = await fetch(`/api/restaurants`).then(r => r.json());
+      const found = restaurants.find((r: {name: string; id: string}) => r.name === order.restaurant);
+      if (!found) return [];
+      return fetch(`/api/restaurants/${found.id}/menu`).then(r => r.json());
+    },
+    enabled: !!order,
   });
 
   useEffect(() => {
@@ -91,6 +108,13 @@ export function PublicOrderPage({ token }: { token: string }) {
           <Card><CardContent className="py-3 text-sm text-muted-foreground">{order.comments}</CardContent></Card>
         )}
 
+        <PaymentInfoCard info={{
+          paymentBank: order.paymentBank,
+          paymentHolder: order.paymentHolder,
+          paymentClabe: order.paymentClabe,
+          paymentCard: order.paymentCard,
+        }} />
+
         <Card>
           <CardContent className="py-3 space-y-1 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatCurrency(order.subtotal, order.currency)}</span></div>
@@ -140,6 +164,7 @@ export function PublicOrderPage({ token }: { token: string }) {
         <AddParticipantDialog
           token={token}
           currency={order.currency}
+          menuItems={menuItems}
           onClose={() => setShowAdd(false)}
           onSuccess={() => { setShowAdd(false); refetch(); }}
         />

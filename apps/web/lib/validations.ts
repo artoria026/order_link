@@ -8,6 +8,10 @@ export const createOrderSchema = z.object({
   deadlineAt: z.string().optional(),
   deliveryFee: z.number().min(0),
   tip: z.number().min(0),
+  paymentBank: z.string().optional(),
+  paymentHolder: z.string().optional(),
+  paymentClabe: z.string().optional(),
+  paymentCard: z.string().optional(),
 });
 
 export const updateOrderSchema = createOrderSchema.partial().extend({

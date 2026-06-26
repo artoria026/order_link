@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,17 +8,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 export default function NewOrderPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateOrderInput>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateOrderInput>({
     resolver: zodResolver(createOrderSchema),
     defaultValues: { currency: "MXN", deliveryFee: 0, tip: 0 },
   });
+
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((profile) => {
+        reset((prev) => ({
+          ...prev,
+          payerName: profile.name ?? "",
+          paymentBank: profile.defaultPaymentBank ?? "",
+          paymentHolder: profile.defaultPaymentHolder ?? "",
+          paymentClabe: profile.defaultPaymentClabe ?? "",
+          paymentCard: profile.defaultPaymentCard ?? "",
+        }));
+      })
+      .catch(() => {});
+  }, [reset]);
 
   async function onSubmit(data: CreateOrderInput) {
     setLoading(true);
@@ -42,50 +59,78 @@ export default function NewOrderPage() {
   return (
     <div className="max-w-lg mx-auto space-y-4">
       <h1 className="text-2xl font-bold">New Order</h1>
-      <Card>
-        <CardHeader><CardTitle>Order Details</CardTitle></CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Card>
+          <CardHeader><CardTitle>Order Details</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="restaurant">Restaurant *</Label>
-              <Input id="restaurant" {...register("restaurant")} placeholder="Tacos El Güero" />
+              <Input id="restaurant" {...register("restaurant")} placeholder="Snack House" />
               {errors.restaurant && <p className="text-xs text-destructive">{errors.restaurant.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="payerName">Who pays? *</Label>
-              <Input id="payerName" {...register("payerName")} placeholder="Juan" />
+              <Label htmlFor="payerName">¿Quién paga? *</Label>
+              <Input id="payerName" {...register("payerName")} placeholder="Arturo" />
               {errors.payerName && <p className="text-xs text-destructive">{errors.payerName.message}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
+                <Label htmlFor="currency">Moneda</Label>
                 <Input id="currency" {...register("currency")} placeholder="MXN" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="deadlineAt">Deadline</Label>
+                <Label htmlFor="deadlineAt">Límite de pedido</Label>
                 <Input id="deadlineAt" type="datetime-local" {...register("deadlineAt")} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="deliveryFee">Delivery Fee</Label>
+                <Label htmlFor="deliveryFee">Envío</Label>
                 <Input id="deliveryFee" type="number" step="0.01" {...register("deliveryFee", { valueAsNumber: true })} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tip">Tip</Label>
+                <Label htmlFor="tip">Propina</Label>
                 <Input id="tip" type="number" step="0.01" {...register("tip", { valueAsNumber: true })} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="comments">Comments</Label>
-              <Textarea id="comments" {...register("comments")} rows={2} placeholder="Any notes..." />
+              <Label htmlFor="comments">Notas</Label>
+              <Textarea id="comments" {...register("comments")} rows={2} placeholder="Instrucciones generales..." />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating..." : "Create & Get Link"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Datos de pago</CardTitle>
+            <CardDescription>Se muestran en el link público para que puedan transferir.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="paymentBank">Banco</Label>
+                <Input id="paymentBank" {...register("paymentBank")} placeholder="BBVA" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="paymentHolder">Titular</Label>
+                <Input id="paymentHolder" {...register("paymentHolder")} placeholder="Arturo García" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentClabe">CLABE interbancaria</Label>
+              <Input id="paymentClabe" {...register("paymentClabe")} placeholder="012345678901234567" maxLength={18} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentCard">Últimos 4 dígitos de tarjeta (opcional)</Label>
+              <Input id="paymentCard" {...register("paymentCard")} placeholder="4321" maxLength={4} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Creando..." : "Crear orden y obtener link"}
+        </Button>
+      </form>
     </div>
   );
 }

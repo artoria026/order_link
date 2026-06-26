@@ -12,12 +12,13 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 
-interface Props { token: string; currency: string; onClose: () => void; onSuccess: () => void; }
+interface MenuItem { id: string; name: string; description: string | null; price: number | null; category: string | null; }
+interface Props { token: string; currency: string; menuItems: MenuItem[]; onClose: () => void; onSuccess: () => void; }
 
-export function AddParticipantDialog({ token, currency, onClose, onSuccess }: Props) {
+export function AddParticipantDialog({ token, currency, menuItems, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
 
-  const { register, control, handleSubmit, formState: { errors } } = useForm<AddParticipantInput>({
+  const { register, control, handleSubmit, setValue, formState: { errors } } = useForm<AddParticipantInput>({
     resolver: zodResolver(addParticipantSchema),
     defaultValues: {
       displayName: "",
@@ -74,6 +75,28 @@ export function AddParticipantDialog({ token, currency, onClose, onSuccess }: Pr
                   </Button>
                 )}
               </div>
+              {menuItems.length > 0 && (
+                <select
+                  className="w-full rounded-md border px-3 py-2 text-sm mb-2 bg-background"
+                  defaultValue=""
+                  onChange={(e) => {
+                    const selected = menuItems.find((m) => m.id === e.target.value);
+                    if (selected) {
+                      setValue(`items.${idx}.product`, selected.name);
+                      if (selected.price != null) setValue(`items.${idx}.unitPrice`, selected.price);
+                    }
+                  }}
+                >
+                  <option value="">— Select from menu —</option>
+                  {Array.from(new Set(menuItems.map((m) => m.category))).map((cat) => (
+                    <optgroup key={cat ?? "Other"} label={cat ?? "Other"}>
+                      {menuItems.filter((m) => m.category === cat).map((m) => (
+                        <option key={m.id} value={m.id}>{m.name}{m.price != null ? ` — ${m.price}` : ""}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              )}
               <Input {...register(`items.${idx}.product`)} placeholder="Product name *" />
               {errors.items?.[idx]?.product && <p className="text-xs text-destructive">{errors.items[idx].product?.message}</p>}
               <div className="grid grid-cols-2 gap-2">
